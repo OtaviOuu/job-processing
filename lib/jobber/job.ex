@@ -1,8 +1,14 @@
 defmodule Jobber.Job do
   defstruct [:work, :id, :max_retries, retries: 0, status: "new"]
 
-  use GenServer
+  use GenServer, restart: :transient
   require Logger
+
+  # overrides GenServer.start_link
+  def start_link(args) do
+    Logger.info("Job starting: #{inspect(args)}")
+    GenServer.start_link(__MODULE__, args)
+  end
 
   def init(args) do
     work = Keyword.fetch!(args, :work)
