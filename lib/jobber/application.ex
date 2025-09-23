@@ -16,7 +16,8 @@ defmodule Jobber.Application do
     children = [
       # Starts a worker by calling: Jobber.Worker.start_link(arg)
       # {Jobber.Worker, arg}
-      {DynamicSupervisor, job_runner_config}
+      {DynamicSupervisor, job_runner_config},
+      {Registry, keys: :unique, name: Jobber.JobRegistry}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

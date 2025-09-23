@@ -6,8 +6,16 @@ defmodule Jobber.Job do
 
   # overrides GenServer.start_link
   def start_link(args) do
-    Logger.info("Job starting: #{inspect(args)}")
-    GenServer.start_link(__MODULE__, args)
+    args =
+      if Keyword.has_key?(args, :id) do
+        args
+      else
+        Keyword.put(args, :id, random_job_id())
+      end
+
+    id = Keyword.get(args, :id)
+    type = Keyword.get(args, :type)
+    GenServer.start_link(__MODULE__, args, name: via(id, type))
   end
 
   def init(args) do
@@ -59,5 +67,16 @@ defmodule Jobber.Job do
 
   defp random_job_id() do
     :crypto.strong_rand_bytes(5) |> Base.url_encode64(padding: false)
+  end
+
+  defp via(key, value) do
+    {:via, Registry, {Jobber.JobRegistry, key, value}}
+  end
+
+  def running_imports() do
+    match_all = {:"$1", :"$2", :"$3"}
+    guards = [{:==, :"$3", "import"}]
+    map_result = [%{id: :"$1", pid: :"$2", type: :"$3"}]
+    Registry.select(Jobber.JobRegistry, [{match_all, guards, map_result}])
   end
 end
